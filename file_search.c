@@ -83,10 +83,13 @@ void search_helper(char *term, char *path, DIR *dir)
 		// Returns ptr to dirent struct if successful, NULL if end of stream
 		if ((dp = readdir(dir)) != NULL) {
 			fName = dp->d_name;
+
 			char *tmpPath = malloc(sizeof(char) * (strlen(path) +
-									strlen(fName)));
+									strlen(fName)+1));
 			strcpy(tmpPath, path);
+			strcat(tmpPath, "/");
 			strcat(tmpPath, fName);
+			
 
 			// Check to see if "." or ".." If so, do not recurse
 			if (strcmp(fName, ".") == 0 || strcmp(fName, "..") == 0) {
@@ -94,7 +97,6 @@ void search_helper(char *term, char *path, DIR *dir)
 			}
 			// Try opening the result from read
 			else if ((nextDir = opendir(tmpPath)) != NULL) {
-				printf("HERE!\n");
 				search_helper(term, tmpPath, nextDir);
 				isDir = true;
 			}
