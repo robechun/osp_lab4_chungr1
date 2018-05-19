@@ -140,11 +140,6 @@ void search_helper(char *term, char *path, DIR *dir)
 		}
 	}
 
-	// TODO: Erase
-	printf("done with search_helper for now\n");
 
 }
 
-// TODO: timing how long it takes
-// TODO: open/read directory errors? (MAX_OPEN) do we need to account?
-// TODO: is '/' a valid starting directory??
