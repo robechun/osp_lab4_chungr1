@@ -4,6 +4,7 @@
 #include <dirent.h>
 #include <stdbool.h>
 #include <unistd.h>
+#include <time.h>
 
 bool validStartingDirectory(char *dir);
 void search(char *term, char *dirname);
@@ -25,8 +26,12 @@ int main(int argc, char *argv[])
 	}
 
 	// Actual search and printing
+	clock_t start = clock(), diff;
 	search(argv[1], argv[2]);
+	diff = clock() - start;
 
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+	printf("Time taken %d seconds %d milliseconds", msec/1000, msec%1000);
 
 	return 0;
 }
@@ -70,11 +75,11 @@ void search(char *term, char *dirname)
 // Returns: NONE, but should print out all the files/directories matching term
 void search_helper(char *term, char *path, DIR *dir)
 {
-	struct dirent *dp;
-	char *found;
-	DIR *nextDir;
-	bool isDir = false;
-	char *fName;
+	struct dirent *dp;		// For accessing readdir return
+	char *found;			// mostly a pointer flag to see if term is found
+	DIR *nextDir;			// The next directory to recurse into
+	bool isDir = false;		// flag for checking if a file is a directory
+	char *fName;			// fName is dp->d_name
 
 	while (dir)
 	{
@@ -84,6 +89,8 @@ void search_helper(char *term, char *path, DIR *dir)
 		if ((dp = readdir(dir)) != NULL) {
 			fName = dp->d_name;
 
+			// Make this tmpPath to make sure we can try opening the current
+			// path + the (potential) directory name
 			char *tmpPath = malloc(sizeof(char) * (strlen(path) +
 									strlen(fName)+1));
 			strcpy(tmpPath, path);
@@ -103,6 +110,7 @@ void search_helper(char *term, char *path, DIR *dir)
 
 
 			// Check to see if the term matches the file we read from readdir
+			// if found is not a NULL ptr, its found something
 			if ((found = strstr(fName, term)) != NULL) {
 				printf("%s/%s", path, fName);
 
@@ -127,11 +135,11 @@ void search_helper(char *term, char *path, DIR *dir)
 		}
 	}
 
+	// TODO: Erase
 	printf("done with search_helper for now\n");
 
 }
 
 // TODO: timing how long it takes
-// TODO: Actual recursion
 // TODO: open/read directory errors? (MAX_OPEN) do we need to account?
 // TODO: is '/' a valid starting directory??
