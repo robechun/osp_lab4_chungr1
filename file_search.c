@@ -31,7 +31,7 @@ int main(int argc, char *argv[])
 	diff = clock() - start;
 
 	int msec = diff * 1000 / CLOCKS_PER_SEC;
-	printf("Time taken %d seconds %d milliseconds", msec/1000, msec%1000);
+	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
 	return 0;
 }
@@ -89,13 +89,15 @@ void search_helper(char *term, char *path, DIR *dir)
 		if ((dp = readdir(dir)) != NULL) {
 			fName = dp->d_name;
 
+
 			// Make this tmpPath to make sure we can try opening the current
 			// path + the (potential) directory name
 			char *tmpPath = malloc(sizeof(char) * (strlen(path) +
-									strlen(fName)+1));
+									strlen(fName)+2));
 			strcpy(tmpPath, path);
 			strcat(tmpPath, "/");
 			strcat(tmpPath, fName);
+			strcat(tmpPath, "\0");
 			
 
 			// Check to see if "." or ".." If so, do not recurse
@@ -104,8 +106,12 @@ void search_helper(char *term, char *path, DIR *dir)
 			}
 			// Try opening the result from read
 			else if ((nextDir = opendir(tmpPath)) != NULL) {
-				search_helper(term, tmpPath, nextDir);
+				char *nextPath = malloc(sizeof(char) * strlen(tmpPath));
+				strcpy(nextPath, tmpPath);
+				search_helper(term, nextPath, nextDir);
 				isDir = true;
+
+				free(nextPath);
 			}
 
 
