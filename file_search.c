@@ -3,10 +3,11 @@
 #include <string.h>
 #include <dirent.h>
 #include <stdbool.h>
+#include <unistd.h>
 
 bool validStartingDirectory(char *dir);
 void search(char *term, char *dirname);
-void search_helper(char *term, DIR *dir);
+void search_helper(char *term, char *path, DIR *dir);
 
 int main(int argc, char *argv[])
 {
@@ -57,25 +58,68 @@ void search(char *term, char *dirname)
 	}
 
 	// Recurse and find files with term
-	search_helper(term, start);
+	search_helper(term, dirname, start);
 }
 
 
 // search_helper() is the recursive function to search()
 // Recursion will be in form of dfs
 // Parameters: char *term --> filename to match and look for
+// 			   char *path --> path of the current dir
 // 			   char *dirname --> the directory to look into
 // Returns: NONE, but should print out all the files/directories matching term
-void search_helper(char *term, DIR *dir)
+void search_helper(char *term, char *path, DIR *dir)
 {
 	struct dirent *dp;
+	char *found;
+	DIR *nextDir;
+	bool isDir = false;
+	char *fName;
 
 	while (dir)
 	{
-		if ((dp = readdir(dir)) != NULL)
-			printf("%s\n", dp->d_name);
+		// readdir reads an element of argument and progresses pointer to next
+		// element.
+		// Returns ptr to dirent struct if successful, NULL if end of stream
+		if ((dp = readdir(dir)) != NULL) {
+			fName = dp->d_name;
+			char *tmpPath = malloc(sizeof(char) * (strlen(path) +
+									strlen(fName)));
+			strcpy(tmpPath, path);
+			strcat(tmpPath, fName);
+
+			// Check to see if "." or ".." If so, do not recurse
+			if (strcmp(fName, ".") == 0 || strcmp(fName, "..") == 0) {
+				;	// Do nothing
+			}
+			// Try opening the result from read
+			else if ((nextDir = opendir(tmpPath)) != NULL) {
+				printf("HERE!\n");
+				search_helper(term, tmpPath, nextDir);
+				isDir = true;
+			}
+
+
+			// Check to see if the term matches the file we read from readdir
+			if ((found = strstr(fName, term)) != NULL) {
+				printf("%s/%s", path, fName);
+
+				// If it is a directory, mark it with a ":"
+				if (isDir) {
+					printf(":");
+					isDir = false;
+				}
+
+				// Formatting
+				printf("\n");
+			}
+
+			free(tmpPath);
+
+		}
+		// END of directory--close the directory we're reading and return from
+		// recursion
 		else {
-			printf("Hello\n");
 			closedir(dir);
 			return;
 		}
