@@ -106,8 +106,7 @@ void search_helper(char *term, char *path, DIR *dir)
 			}
 			// Try opening the result from read
 			else if ((nextDir = opendir(tmpPath)) != NULL) {
-				char *nextPath = malloc(sizeof(char) * strlen(tmpPath));
-				strcpy(nextPath, tmpPath);
+				char *nextPath = strdup(tmpPath);
 				search_helper(term, nextPath, nextDir);
 				isDir = true;
 
