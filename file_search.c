@@ -5,6 +5,8 @@
 #include <stdbool.h>
 
 bool validStartingDirectory(char *dir);
+void search(char *term, char *dirname);
+void search_helper(char *term, DIR *dir);
 
 int main(int argc, char *argv[])
 {
@@ -66,12 +68,24 @@ void search(char *term, char *dirname)
 // Returns: NONE, but should print out all the files/directories matching term
 void search_helper(char *term, DIR *dir)
 {
+	struct dirent *dp;
 
+	while (dir)
+	{
+		if ((dp = readdir(dir)) != NULL)
+			printf("%s\n", dp->d_name);
+		else {
+			printf("Hello\n");
+			closedir(dir);
+			return;
+		}
+	}
 
-
+	printf("done with search_helper for now\n");
 
 }
 
 // TODO: timing how long it takes
 // TODO: Actual recursion
 // TODO: open/read directory errors? (MAX_OPEN) do we need to account?
+// TODO: is '/' a valid starting directory??
