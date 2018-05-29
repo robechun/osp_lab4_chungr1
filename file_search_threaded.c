@@ -5,7 +5,8 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <time.h>
-#include <errno.h>
+
+#define NUM_THREADS = 1;
 
 bool validStartingDirectory(char *dir);
 void search(char *term, char *dirname);
@@ -13,7 +14,6 @@ void search_helper(char *term, char *path, DIR *dir);
 
 int main(int argc, char *argv[])
 {
-
 	// Usage: file_search <search term> <starting directory>
 	// Therefore, should ALWAYS have 3 arguments
 	if (argc != 3) {
@@ -106,24 +106,13 @@ void search_helper(char *term, char *path, DIR *dir)
 				;	// Do nothing
 			}
 			// Try opening the result from read
-			else {
-				nextDir = opendir(tmpPath);
+			else if ((nextDir = opendir(tmpPath)) != NULL) {
+				char *nextPath = strdup(tmpPath);
+				search_helper(term, nextPath, nextDir);
+				isDir = true;
 
-				if (nextDir != NULL) {
-					char *nextPath = strdup(tmpPath);
-					search_helper(term, nextPath, nextDir);
-					isDir = true;
-
-					free(nextPath);
-				}
-
-				if (errno != ENOTDIR) {
-					perror("Something weird happened!");
-					fprintf(stderr, " while looking at %s\n", path);
-					exit(1);
-				}
+				free(nextPath);
 			}
-
 
 
 			// Check to see if the term matches the file we read from readdir
