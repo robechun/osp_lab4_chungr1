@@ -5,15 +5,21 @@
 #include <stdbool.h>
 #include <unistd.h>
 #include <time.h>
+#include <errno.h>
 
-#define NUM_THREADS = 1;
+#define NUM_THREADS = 1
 
-bool validStartingDirectory(char *dir);
+
+DIR *validStartingDirectory(char *dir);
 void search(char *term, char *dirname);
 void search_helper(char *term, char *path, DIR *dir);
 
 int main(int argc, char *argv[])
 {
+	DIR *startDir;			// starting directory
+	struct dirent *dp;		// For accessing readdir return
+
+
 	// Usage: file_search <search term> <starting directory>
 	// Therefore, should ALWAYS have 3 arguments
 	if (argc != 3) {
@@ -21,11 +27,38 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 	
-	if (!validStartingDirectory(argv[2])) {
+	// If not valid starting directory (cant open or name is wrong)
+	if ((startDir = validStartingDirectory(argv[2])) == NULL) {
 		fprintf(stderr, "Not a valid starting directory\n");
 		exit(1);
 	}
 
+	// Initialize the threads that are going to be used.
+	pthread_t threads[NUM_THREADS];
+
+
+	// TODO: Timing happens here?
+	
+	// readdir reads an element of argument and progresses pointer to next
+	// element.
+	// Returns ptr to dirent struct if successful, NULL if end of stream
+	if ((dp = readdir(startDir)) != NULL) {
+		// TODO: do the start threads here and stuff
+		// TODO: know what to pass in for threads
+	}
+	
+
+	// TODO: Current thinking process
+	// Main searches through the directory to search; if it finds something it
+	// can recurse, allocate a thread to it. Thus, each thread looks through the
+	// original directory in the starting directory.
+
+
+
+
+
+	// TODO: search probably doesn't need to be used anymore
+	// TODO: recursion may need to be a function pointer
 	// Actual search and printing
 	clock_t start = clock(), diff;
 	search(argv[1], argv[2]);
@@ -39,12 +72,12 @@ int main(int argc, char *argv[])
 
 // Check to see that the starting directory is formatted correctly
 // Should always start with a '/' and never end with a '/'
-bool validStartingDirectory(char *dir)
+DIR *validStartingDirectory(char *dir)
 {
 	if (dir[0] != '/' || dir[strlen(dir)-1] == '/')
 		return false;
 
-	return true;
+	return opendir(dir);
 }
 
 // search() is a primer-function for the recursive search
@@ -68,6 +101,7 @@ void search(char *term, char *dirname)
 }
 
 
+// TODO: search_helper (MAY) need to be changed a little bit?? donno yet
 // search_helper() is the recursive function to search()
 // Recursion will be in form of dfs
 // Parameters: char *term --> filename to match and look for
@@ -106,13 +140,24 @@ void search_helper(char *term, char *path, DIR *dir)
 				;	// Do nothing
 			}
 			// Try opening the result from read
-			else if ((nextDir = opendir(tmpPath)) != NULL) {
-				char *nextPath = strdup(tmpPath);
-				search_helper(term, nextPath, nextDir);
-				isDir = true;
+			else {
+				nextDir = opendir(tmpPath);
 
-				free(nextPath);
+				if (nextDir != NULL) {
+					char *nextPath = strdup(tmpPath);
+					search_helper(term, nextPath, nextDir);
+					isDir = true;
+
+					free(nextPath);
+				}
+
+				if (errno != ENOTDIR) {
+					perror("Something weird happened!");
+					fprintf(stderr, " while looking at %s\n", path);
+					exit(1);
+				}
 			}
+
 
 
 			// Check to see if the term matches the file we read from readdir
