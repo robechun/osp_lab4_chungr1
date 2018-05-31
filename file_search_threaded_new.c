@@ -76,7 +76,8 @@ int main(int argc, char **argv)
 					cur_file->d_name, \
 					strlen(cur_file->d_name) + 1);
 
-			//recurse on the file
+			//recurse on the file -- with threads!
+            // TODO: make it into threads
 			recur_file_search(next_file_str);
 
 			//free the dynamically-allocated string
@@ -94,6 +95,11 @@ int main(int argc, char **argv)
 
 	return 0;
 }
+
+
+// TODO: Make recursive function into function pointer(?)
+// TODO: perhaps think about what to pass in, but since only one thing passed for
+//       recur, it might be okay to not use a struct.
 
 
 //This function takes a path to recurse on, searching for mathes to the
