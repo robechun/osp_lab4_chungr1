@@ -37,15 +37,13 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	
-	//start timer for recursive search
-	struct timeval start, end;
-	gettimeofday(&start, NULL);
-
+	clock_t start = clock(), diff;
 	recur_file_search(argv[2]);
+	diff = clock() - start;
 
-	gettimeofday(&end, NULL);
-	printf("Time: %ld\n", (end.tv_sec * 1000000 + end.tv_usec)
-			- (start.tv_sec * 1000000 + start.tv_usec));
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+
+	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
 	return 0;
 }
