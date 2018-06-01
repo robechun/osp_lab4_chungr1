@@ -5,12 +5,13 @@
 #include <string.h>
 #include <sys/time.h>
 #include <errno.h>
+#include <pthread.h>
 
-#define NUM_THREADS = 1;
+#define NUM_THREADS 1
 
 //takes a file/dir as argument, recurses,
 // prints name if empty dir or not a dir (leaves)
-void recur_file_search(char *file);
+void *recur_file_search(char *file);
 
 //share search term globally (rather than passing recursively)
 const char *search_term;
@@ -29,8 +30,9 @@ int main(int argc, char **argv)
 	// know for sure which is which anyway
 	search_term = argv[1];
 
+	char *file = argv[2];
 	//open the top-level directory
-	DIR *dir = opendir(argv[2]);
+	DIR *dir = opendir(file);
 
 	//make sure top-level dir is openable (i.e., exists and is a directory)
 	if(dir == NULL)
@@ -42,6 +44,7 @@ int main(int argc, char **argv)
 
     // Array of threads to use
     pthread_t threads[NUM_THREADS];
+    int i = 0;
 
     // ******  TIMING START  ************ //
     clock_t start = clock(), diff;
@@ -77,14 +80,23 @@ int main(int argc, char **argv)
 					strlen(cur_file->d_name) + 1);
 
 			//recurse on the file -- with threads!
-            // TODO: make it into threads
-			recur_file_search(next_file_str);
+            pthread_create(threads[i], NULL, recur_file_search, (void *) next_file_str);
+            i++;
 
 			//free the dynamically-allocated string
 			free(next_file_str);
 		}
+        
+        if (i == NUM_THREADS) {
+            for (int j = 0; j < NUM_THREADS; j++) {
+                pthread_join(threads[i], NULL);
+            }
+            i = 0;
+        }
+            
 	}
     diff = clock() - start;
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
     // ******  TIMING END  ********** //
 
 	//close the directory, or we will have too many files opened (bad times)
@@ -112,7 +124,7 @@ int main(int argc, char **argv)
 //Effects: prints the filename if the base case is reached *and* search_term
 // is found in the filename; otherwise, prints the directory name if the directory
 // matches search_term.
-void recur_file_search(char *file)
+void *recur_file_search(char *file)
 {
 	//check if directory is actually a file
 	DIR *d = opendir(file);
@@ -136,7 +148,7 @@ void recur_file_search(char *file)
 			printf("%s\n", file);
 
 		//no need to close d (we can't, it is NULL!)
-		return;
+		return NULL;
 	}
 
 	//we have a directory, not a file, so check if its name
