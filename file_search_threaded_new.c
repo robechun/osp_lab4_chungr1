@@ -81,12 +81,14 @@ int main(int argc, char **argv)
 
 			//printf("DEBUG: next_file_str: %s\n", next_file_str);
 			//recurse on the file -- with threads!
+			char *fileToPass = strdup(next_file_str);
             pthread_create(&threads[i], NULL, recur_file_search,
-							(void *) strdup(next_file_str));
+							(void *) fileToPass);
             i++;
 
 			//free the dynamically-allocated string
 			free(next_file_str);
+			free(fileToPass);
 		}
         
         if (i == NUM_THREADS) {
@@ -105,6 +107,7 @@ int main(int argc, char **argv)
 
 	//close the directory, or we will have too many files opened (bad times)
 	closedir(dir);
+	free(file);
     
     
     printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
