@@ -6,6 +6,7 @@
 #include <sys/time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <assert.h>
 
 #define NUM_THREADS 4
 
@@ -42,8 +43,8 @@ int main(int argc, char **argv)
 	}
 
 
-    // Array of threads to use
-    pthread_t threads[NUM_THREADS];
+    pthread_t threads[NUM_THREADS]; // array of threads to use
+	char *toFree[NUM_THREADS];		// dynamic file name free thread-safe
     int i = 0;
 
     // ******  TIMING START  ************ //
@@ -82,19 +83,20 @@ int main(int argc, char **argv)
 			//printf("DEBUG: next_file_str: %s\n", next_file_str);
 			//recurse on the file -- with threads!
 			char *fileToPass = strdup(next_file_str);
-            pthread_create(&threads[i], NULL, recur_file_search,
-							(void *) fileToPass);
+            assert(pthread_create(&threads[i], NULL, recur_file_search,
+							(void *) fileToPass) == 0);
+			toFree[i] = fileToPass;
             i++;
 
 			//free the dynamically-allocated string
 			free(next_file_str);
-			free(fileToPass);
 		}
         
         if (i == NUM_THREADS) {
 			//printf("DEBUG: before join\n");
             for (int j = 0; j < NUM_THREADS; j++) {
-                pthread_join(threads[j], NULL);
+                assert(pthread_join(threads[j], NULL) == 0);
+				free(toFree[j]);
 				//printf("DEBUG: JOINED %d\n", j);
             }
             i = 0;
@@ -114,11 +116,6 @@ int main(int argc, char **argv)
 
 	return 0;
 }
-
-
-// TODO: Make recursive function into function pointer(?)
-// TODO: perhaps think about what to pass in, but since only one thing passed for
-//       recur, it might be okay to not use a struct.
 
 
 //This function takes a path to recurse on, searching for mathes to the
