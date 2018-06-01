@@ -7,11 +7,11 @@
 #include <errno.h>
 #include <pthread.h>
 
-#define NUM_THREADS 1
+#define NUM_THREADS 4
 
 //takes a file/dir as argument, recurses,
 // prints name if empty dir or not a dir (leaves)
-void *recur_file_search(char *file);
+void *recur_file_search(void *arg);
 
 //share search term globally (rather than passing recursively)
 const char *search_term;
@@ -30,7 +30,7 @@ int main(int argc, char **argv)
 	// know for sure which is which anyway
 	search_term = argv[1];
 
-	char *file = argv[2];
+	char *file = strdup(argv[2]);
 	//open the top-level directory
 	DIR *dir = opendir(file);
 
@@ -79,8 +79,10 @@ int main(int argc, char **argv)
 					cur_file->d_name, \
 					strlen(cur_file->d_name) + 1);
 
+			//printf("DEBUG: next_file_str: %s\n", next_file_str);
 			//recurse on the file -- with threads!
-            pthread_create(threads[i], NULL, recur_file_search, (void *) next_file_str);
+            pthread_create(&threads[i], NULL, recur_file_search,
+							(void *) strdup(next_file_str));
             i++;
 
 			//free the dynamically-allocated string
@@ -88,8 +90,10 @@ int main(int argc, char **argv)
 		}
         
         if (i == NUM_THREADS) {
+			//printf("DEBUG: before join\n");
             for (int j = 0; j < NUM_THREADS; j++) {
-                pthread_join(threads[i], NULL);
+                pthread_join(threads[j], NULL);
+				//printf("DEBUG: JOINED %d\n", j);
             }
             i = 0;
         }
@@ -124,8 +128,9 @@ int main(int argc, char **argv)
 //Effects: prints the filename if the base case is reached *and* search_term
 // is found in the filename; otherwise, prints the directory name if the directory
 // matches search_term.
-void *recur_file_search(char *file)
+void *recur_file_search(void *arg)
 {
+	char *file = (char*) arg;
 	//check if directory is actually a file
 	DIR *d = opendir(file);
 
@@ -191,4 +196,6 @@ void *recur_file_search(char *file)
 
 	//close the directory, or we will have too many files opened (bad times)
 	closedir(d);
+
+	return NULL;
 }
