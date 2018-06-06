@@ -133,7 +133,7 @@ void search_helper(char *term, char *path, DIR *dir)
 
 				// If it is a directory, mark it with a ":"
 				if (isDir) {
-					printf(":");
+					printf("/");
 					isDir = false;
 				}
 
