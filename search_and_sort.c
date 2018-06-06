@@ -9,11 +9,12 @@
 //takes a file/dir as argument, recurses,
 // prints name if empty dir or not a dir (leaves)
 void recur_file_search(char *file);
+void printList();
 
 //share search term globally (rather than passing recursively)
 const char *search_term;
-char **allFiles;		// array of all files found
-int i = 0;				// global counter for above list
+char **allFiles;			// array of all files found
+int count = 0;				// global counter for above list
 
 int main(int argc, char **argv)
 {
@@ -39,14 +40,18 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 	
+	allFiles = malloc(sizeof(char*));
+	char *argv_2_cpy = strdup(argv[2]);
 	// TODO, might need to strdup argv[2] for passing in
 	clock_t start = clock(), diff;
-	recur_file_search(argv[2]);
+	recur_file_search(argv_2_cpy);
 	diff = clock() - start;
 
 	int msec = diff * 1000 / CLOCKS_PER_SEC;
 
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
+
+	printList();
 
 	return 0;
 }
@@ -67,6 +72,7 @@ void recur_file_search(char *file)
 	//check if directory is actually a file
 	DIR *d = opendir(file);
 
+	printf("DEBUG:recursed--%s\n", file);
 	//NULL means not a directory (or another, unlikely error)
 	if(d == NULL)
 	{
@@ -81,22 +87,30 @@ void recur_file_search(char *file)
 		}
 
 		//nothing weird happened, so add to list of found paths
-		allFiles[i] = malloc(sizeof(char*));
-		allFiles[i] = file;
-
+		printf("DEBUG:_NOT a directory\n");
+		allFiles[count] = malloc(sizeof(char*));
+		allFiles[count] = file;
+		count++;
+		printf("DEBUG: After insert file_only\n");
+		printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
 		//no need to close d (we can't, it is NULL!)
 		return;
 	}
 
+
+	printf("DEBUG:_IS a directory\n");
 	//we have a directory, so add "/" onto the end and put it in the list
 	char *file_cpy_dir = malloc(sizeof(char) * strlen(file) + 1);
+	strncpy(file_cpy_dir, file, strlen(file));
 	strncpy(file_cpy_dir + strlen(file), "/", 1);
 
+	printf("DEBUG: cpy is:%s\n", file_cpy_dir);
 
-	allFiles[i] = malloc(sizeof(char*));
-	allFiles[i] = file_cpy_dir;
-	free(file);
+	allFiles[count] = malloc(sizeof(char*));
+	allFiles[count] = file_cpy_dir;
+	count++;
+	printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
 	//call recur_file_search for each file in d
 	//readdir "discovers" all the files in d, one by one and we
@@ -116,6 +130,7 @@ void recur_file_search(char *file)
 					strlen(cur_file->d_name) + \
 					strlen(file) + 2);
 
+			printf("DEBUG: FILE is:%s\n", file);
 			strncpy(next_file_str, file, strlen(file));
 			strncpy(next_file_str + strlen(file), \
 					"/", 1);
@@ -125,12 +140,25 @@ void recur_file_search(char *file)
 
 			//recurse on the file
 			recur_file_search(next_file_str);
-
+			printf("DEBUG: *** returned from recursion ***\n");
 			//free the dynamically-allocated string
-			free(next_file_str);
+			//free(next_file_str);
 		}
+		printf("DEBUG: cur_file is:%s\n", cur_file->d_name);
 	}
+	printf("DEBUG: ---- end of while loop ---\n");
 
+	//free(file);
 	//close the directory, or we will have too many files opened (bad times)
 	closedir(d);
 }
+
+
+void printList() {
+
+	for (int i = 0; i < count; i++)
+	{
+		printf("%s", allFiles[i]);
+	}
+}
+
