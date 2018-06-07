@@ -5,17 +5,22 @@
 #include <string.h>
 #include <time.h>
 #include <errno.h>
+#include <pthread.h>
+
+#define NUM_THREADS 4
+
 
 //takes a file/dir as argument, recurses,
-// prints name if empty dir or not a dir (leaves)
+// stores file name into allFiles list
 void recur_file_search(char *file);
-void printList(char**);
-void extendList(char***);
+void printList(char**);		// prints list
+void extendList(char***);	// extends the list
 
-const char *search_term;    // share_term for global use instead of passing in
+char *search_term;
 char **allFiles;			// array of all files found
 int count = 0;				// global counter for above list
 int allFiles_cap = 2000;	// A changing cap for the "vector" that is allFiles
+
 
 int main(int argc, char **argv)
 {
@@ -27,10 +32,6 @@ int main(int argc, char **argv)
 		exit(1);
 	}
 
-	//don't need to bother checking if term/directory are swapped, since we can't
-	// know for sure which is which anyway
-	search_term = argv[1];
-
 	//open the top-level directory
 	DIR *dir = opendir(argv[2]);
 
@@ -40,17 +41,31 @@ int main(int argc, char **argv)
 		perror("opendir failed");
 		exit(1);
 	}
+
+	search_term = argv[1];
 	
+	// Store all file names in allFiles array to sort later
 	allFiles = malloc(sizeof(char*) * allFiles_cap);
-	char *argv_2_cpy = strdup(argv[2]);
+	char *argv_2_cpy = strdup(argv[2]);	// needed to pass into recursive search
+	recur_file_search(argv_2_cpy);		// find all files
+
+
+
+	// ------- SORTING START ---------- //
+	pthread_t threads[NUM_THREADS];			// Array of threads to use
+
+
 	clock_t start = clock(), diff;
-	recur_file_search(argv_2_cpy);
+	// TODO: sorting in here
 	diff = clock() - start;
 
+
+	// TIME TAKEN
 	int msec = diff * 1000 / CLOCKS_PER_SEC;
 
 	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
+	// Print out the sorted files
 	printList(allFiles);
 
 	return 0;
@@ -94,10 +109,11 @@ void recur_file_search(char *file)
 		}
 
 		//nothing weird happened, so add to list of found paths
-		//printf("DEBUG:_NOT a directory\n");
-		allFiles[count] = malloc(sizeof(char*));
-		allFiles[count] = file;
-		count++;
+		if (strstr(file, search_term) != NULL) {
+			allFiles[count] = malloc(sizeof(char*));
+			allFiles[count] = file; 
+			count++;
+		}
 
 		//printf("DEBUG: After insert file_only\n");
 		//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
@@ -117,10 +133,11 @@ void recur_file_search(char *file)
 	strncpy(file_cpy_dir + strlen(file), "/", 1);
 
 	//printf("DEBUG: cpy is:%s\n", file_cpy_dir);
-
-	allFiles[count] = malloc(sizeof(char*));
-	allFiles[count] = file_cpy_dir;
-	count++;
+	if (strstr(file, search_term) != NULL) {
+		allFiles[count] = malloc(sizeof(char*));
+		allFiles[count] = file_cpy_dir;
+		count++;
+	}
 
 	//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
@@ -207,3 +224,6 @@ void extendList(char ***list) {
 	
 	//printList(list);
 }
+
+// TODO: make correct comments and erase wrong comments
+// TODO: erase debug messages
