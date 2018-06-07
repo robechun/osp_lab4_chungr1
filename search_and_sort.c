@@ -6,6 +6,8 @@
 #include <time.h>
 #include <errno.h>
 #include <pthread.h>
+#include <assert.h>
+
 
 #define NUM_THREADS 4
 
@@ -16,11 +18,16 @@ void recur_file_search(char *file);
 void printList(char**);		// prints list
 void extendList(char***);	// extends the list
 
+// Merge sort algorithm functions
+void merge(int, int, int);
+void mergeHelper(int, int);
+void *mergeSort(void*);
+
 char *search_term;
 char **allFiles;			// array of all files found
 int count = 0;				// global counter for above list
-int allFiles_cap = 2000;	// A changing cap for the "vector" that is allFiles
-
+int allFiles_cap = 2;		// A changing cap for the "vector" that is allFiles
+int thread_count = 1;
 
 int main(int argc, char **argv)
 {
@@ -47,7 +54,7 @@ int main(int argc, char **argv)
 	// Store all file names in allFiles array to sort later
 	allFiles = malloc(sizeof(char*) * allFiles_cap);
 	char *argv_2_cpy = strdup(argv[2]);	// needed to pass into recursive search
-	recur_file_search(argv_2_cpy);		// find all files
+	recur_file_search(argv_2_cpy);		// go through all files 
 
 
 
@@ -56,18 +63,35 @@ int main(int argc, char **argv)
 
 
 	clock_t start = clock(), diff;
-	// TODO: sorting in here
+
+	// Start threads on merging with 4 threads
+	for (int i = 0; i < NUM_THREADS; i++) 
+		assert(pthread_create(&threads[i], NULL, mergeSort, (void*) NULL) == 0);
+
+	// Wait for all threads to finish
+	for (int i = 0; i < NUM_THREADS; i++)
+		assert(pthread_join(threads[i], NULL) == 0);
+
+	// After returning from the last merge, need to merge one last time to get
+	// Correct output
+    merge(0, 
+		  (NUM_THREADS / 2 - 1) / 2,
+		  NUM_THREADS / 2 - 1);
+    merge(NUM_THREADS / 2, 
+		  NUM_THREADS/2 + (NUM_THREADS-1-NUM_THREADS/2)/2, 
+		  NUM_THREADS - 1);
+    merge(0,
+		  (NUM_THREADS - 1)/2,
+		  NUM_THREADS - 1);
+
 	diff = clock() - start;
-
-
-	// TIME TAKEN
-	int msec = diff * 1000 / CLOCKS_PER_SEC;
-
-	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 
 	// Print out the sorted files
 	printList(allFiles);
 
+	// TIME TAKEN
+	int msec = diff * 1000 / CLOCKS_PER_SEC;
+	printf("Time taken %d seconds %d milliseconds\n", msec/1000, msec%1000);
 	return 0;
 }
 
@@ -225,5 +249,81 @@ void extendList(char ***list) {
 	//printList(list);
 }
 
+void *mergeSort(void *arg) {
+	
+	// Calculating what the low, mid, and highs are
+	int low = thread_count * (NUM_THREADS / 4);
+	int high = (thread_count + 1) * (NUM_THREADS / 4) - 1;
+	int mid = low + (high - low) / 2;
+
+	// Start merging 
+	if (low < high) {
+		mergeHelper(low, mid);
+		mergeHelper(mid+1, high);
+		merge(low, mid, high);
+	}
+
+	return NULL;
+}
+
+void mergeHelper(int low, int high) {
+	int mid = low + (high - low) / 2;
+
+	// start merging recursively
+	if (low < high) {
+		mergeHelper(low, mid);
+		mergeHelper(mid+1, high);
+		merge(low, mid, high);
+	}
+
+}
+
+void merge(int low, int mid, int high) {
+	
+	// new array sizes
+	int left_size = mid - low + 1;
+	int right_size = high - mid;
+
+	// new arrays for merging
+	char **left = malloc(sizeof(char*) * left_size);
+	char **right = malloc(sizeof(char*) * right_size);
+
+
+	// copy over values to the new left array
+	int i = 0;
+	for (i = 0; i < left_size; i++)
+		left[i] = allFiles[i + low];
+
+	// copy over values ot the new right array
+	int j = 0;
+	for (j = 0; j < right_size; j++)
+		right[j] = allFiles[j + mid + 1];
+
+
+	i = j = 0;
+	int k = low;
+
+	
+	// merge both sides
+	while (i < left_size && j < right_size) {
+        if (strcmp(left[i], right[j]) <= 0)
+            allFiles[k++] = left[i++];
+        else
+            allFiles[k++] = right[j++];
+    }
+	
+	// Take care of remaining things that might not have been merged above
+    while (i < left_size) {
+        allFiles[k++] = left[i++];
+    }
+    while (j < right_size) {
+        allFiles[k++] = right[j++];
+    }
+
+}
+		
+
+
+	
 // TODO: make correct comments and erase wrong comments
 // TODO: erase debug messages
