@@ -10,12 +10,12 @@
 // prints name if empty dir or not a dir (leaves)
 void recur_file_search(char *file);
 void printList(char**);
-void extendList(char**);
+void extendList(char***);
 
 const char *search_term;    // share_term for global use instead of passing in
 char **allFiles;			// array of all files found
 int count = 0;				// global counter for above list
-int allFiles_cap = 10;		// A changing cap for the "vector" that is allFiles
+int allFiles_cap = 2000;	// A changing cap for the "vector" that is allFiles
 
 int main(int argc, char **argv)
 {
@@ -75,10 +75,11 @@ void recur_file_search(char *file)
 	// If we need to allocate more memory to make space for the new files
 	// that might be added, extend the allFiles list.
 	if (count == allFiles_cap) {
-		extendList(allFiles);
+		extendList(&allFiles);
 	}
 
 	//printf("DEBUG:recursed--%s\n", file);
+	//printf("count:%d\n", count);
 	//NULL means not a directory (or another, unlikely error)
 	if(d == NULL)
 	{
@@ -102,7 +103,7 @@ void recur_file_search(char *file)
 		//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
 		//printf("-------- START PRINT LIST --------------\n");
-		printList(allFiles);
+		//printList(allFiles);
 		//printf("------- END PRINT LIST -----------------\n");
 		//no need to close d (we can't, it is NULL!)
 		return;
@@ -123,9 +124,9 @@ void recur_file_search(char *file)
 
 	//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
-	printf("-------- START PRINT LIST --------------\n");
-	printList(allFiles);
-	printf("------- END PRINT LIST -----------------\n");
+	//printf("-------- START PRINT LIST --------------\n");
+	//printList(allFiles);
+	//printf("------- END PRINT LIST -----------------\n");
 	//call recur_file_search for each file in d
 	//readdir "discovers" all the files in d, one by one and we
 	// recurse on those until we run out (readdir will return NULL)
@@ -185,12 +186,12 @@ void printList(char **list) {
 // extendList is to resize the dynamic array passed in.
 // In this case, we are increasing the size of a char **list by 2x.
 // This allows for more items to be stored in the dynamic array
-void extendList(char **list) {
+void extendList(char ***list) {
 
 	allFiles_cap = allFiles_cap * 2;	// increase the cap by 2x
 
 
-	char **temp = realloc(list, sizeof(char*) * allFiles_cap);
+	char **temp = realloc(*list, sizeof(char*) * allFiles_cap);
 
 	// Something went wrong with realloc, so exit
 	if (!temp) {
@@ -198,8 +199,8 @@ void extendList(char **list) {
 		exit(1);
 	}
 
-	free(list);
-	list = temp;
+	//free(list);
+	*list = temp;
 	
-	printList(list);
+	//printList(list);
 }
