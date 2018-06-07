@@ -180,7 +180,10 @@ void printList(char **list) {
 	for (int i = 0; i < count; i++)
 	{
 		printf("%s\n", list[i]);
+		free(list[i]);
 	}
+
+	free(list);
 }
 
 // extendList is to resize the dynamic array passed in.
