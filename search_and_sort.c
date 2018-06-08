@@ -60,8 +60,6 @@ int main(int argc, char **argv)
 
 	// ------- SORTING START ---------- //
 	pthread_t threads[NUM_THREADS];			// Array of threads to use
-
-
 	clock_t start = clock(), diff;
 
 	// Start threads on merging with 4 threads
@@ -74,18 +72,13 @@ int main(int argc, char **argv)
 
 	// After returning from the last merge, need to merge one last time to get
 	// Correct output
-    merge(0, 
-		  (NUM_THREADS / 2 - 1) / 2,
-		  NUM_THREADS / 2 - 1);
-    merge(NUM_THREADS / 2, 
-		  NUM_THREADS/2 + (NUM_THREADS-1-NUM_THREADS/2)/2, 
-		  NUM_THREADS - 1);
-    merge(0,
-		  (NUM_THREADS - 1)/2,
-		  NUM_THREADS - 1);
+	merge(0, (count / 2 - 1) / 2, count / 2 - 1);
+    merge(count / 2, count/2 + (count-1-count/2)/2, count - 1);
+    merge(0, (count - 1)/2, count - 1);
 
 	diff = clock() - start;
-
+	// ------- SORTING END ---------- //
+	
 	// Print out the sorted files
 	printList(allFiles);
 
