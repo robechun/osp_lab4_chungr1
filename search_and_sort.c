@@ -117,8 +117,6 @@ void recur_file_search(char *file)
 		extendList(&allFiles);
 	}
 
-	//printf("DEBUG:recursed--%s\n", file);
-	//printf("count:%d\n", count);
 	//NULL means not a directory (or another, unlikely error)
 	if(d == NULL)
 	{
@@ -139,43 +137,30 @@ void recur_file_search(char *file)
 			count++;
 		}
 
-		//printf("DEBUG: After insert file_only\n");
-		//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
-		//printf("-------- START PRINT LIST --------------\n");
-		//printList(allFiles);
-		//printf("------- END PRINT LIST -----------------\n");
 		//no need to close d (we can't, it is NULL!)
 		return;
 	}
 
 
-	//printf("DEBUG:_IS a directory\n");
 	//we have a directory, so add "/" onto the end and put it in the list
 	char *file_cpy_dir = malloc(sizeof(char) * strlen(file) + 1);
 	strncpy(file_cpy_dir, file, strlen(file));
 	strncpy(file_cpy_dir + strlen(file), "/", 1);
 
-	//printf("DEBUG: cpy is:%s\n", file_cpy_dir);
 	if (strstr(file, search_term) != NULL) {
 		allFiles[count] = malloc(sizeof(char*));
 		allFiles[count] = file_cpy_dir;
 		count++;
 	}
 
-	//printf("DEBUG:  INSERTED:%s\n", allFiles[count-1]);
 
-	//printf("-------- START PRINT LIST --------------\n");
-	//printList(allFiles);
-	//printf("------- END PRINT LIST -----------------\n");
 	//call recur_file_search for each file in d
 	//readdir "discovers" all the files in d, one by one and we
 	// recurse on those until we run out (readdir will return NULL)
 	struct dirent *cur_file;
 	while((cur_file = readdir(d)) != NULL)
 	{
-		//printf("Hello:%s\n",file);
-		//printf("DEBUG: cur_file is:%s\n", cur_file->d_name);
 		//make sure we don't recurse on . or ..
 		if(strcmp(cur_file->d_name, "..") != 0 &&\
 				strcmp(cur_file->d_name, ".") != 0)
@@ -188,7 +173,6 @@ void recur_file_search(char *file)
 					strlen(cur_file->d_name) + \
 					strlen(file) + 2);
 
-			//printf("DEBUG: FILE is:%s\n", file);
 			strncpy(next_file_str, file, strlen(file));
 			strncpy(next_file_str + strlen(file), \
 					"/", 1);
@@ -196,18 +180,11 @@ void recur_file_search(char *file)
 					cur_file->d_name, \
 					strlen(cur_file->d_name) + 1);
 
-			//printf("DEBUG: FILE is:%s\n", file);
-			//printf("DEBUG: next_file is:%s\n", next_file_str);
 
 			//recurse on the file
 			recur_file_search(next_file_str);
-			//printf("DEBUG: *** returned from recursion ***\n");
-			//printf("hello2:%s\n", file);
-			//free the dynamically-allocated string
-			//free(next_file_str);
 		}
 	}
-	//printf("DEBUG: ---- end of while loop ---\n");
 
 	free(file);
 	//close the directory, or we will have too many files opened (bad times)
@@ -249,6 +226,7 @@ void extendList(char ***list) {
 	//printList(list);
 }
 
+// mergeSort is the threaded version of mergesort.
 void *mergeSort(void *arg) {
 	
 	// Calculating what the low, mid, and highs are
@@ -266,6 +244,7 @@ void *mergeSort(void *arg) {
 	return NULL;
 }
 
+// mergeHelper is what will allow actual recursion to take place
 void mergeHelper(int low, int high) {
 	int mid = low + (high - low) / 2;
 
@@ -278,6 +257,7 @@ void mergeHelper(int low, int high) {
 
 }
 
+// merge is the merge part of merge-sort algorithm
 void merge(int low, int mid, int high) {
 	
 	// new array sizes
@@ -322,8 +302,3 @@ void merge(int low, int mid, int high) {
 
 }
 		
-
-
-	
-// TODO: make correct comments and erase wrong comments
-// TODO: erase debug messages
