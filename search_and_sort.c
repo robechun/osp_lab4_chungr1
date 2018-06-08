@@ -59,8 +59,8 @@ int main(int argc, char **argv)
 
 
 	// ------- SORTING START ---------- //
-	pthread_t threads[NUM_THREADS];			// Array of threads to use
 	clock_t start = clock(), diff;
+	pthread_t threads[NUM_THREADS];			// Array of threads to use
 
 	// Start threads on merging with 4 threads
 	for (int i = 0; i < NUM_THREADS; i++) 
